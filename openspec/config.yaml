@@ -1,0 +1,71 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  ## Project
+  Python CLI tool that reads OpenAPI/Swagger spec files (JSON or YAML) and uses the Anthropic Claude API to generate developer-friendly API documentation in Markdown or HTML format.
+
+  ## Tech Stack
+  - Language: Python 3.12+
+  - LLM Provider: Anthropic Claude API via `anthropic` SDK (>=0.40.0)
+  - Data Validation: Pydantic v2 (>=2.0.0)
+  - Config Management: python-dotenv (>=1.0.0)
+  - YAML Support: PyYAML (>=6.0)
+  - CLI Framework: argparse (stdlib)
+  - Testing: pytest (>=8.0.0)
+
+  ## Project Structure
+  - src/main.py — CLI entry point and argument parsing
+  - src/parser.py — OpenAPI spec parsing and normalization into Pydantic models
+  - src/generator.py — LLM-powered documentation generation via Anthropic API
+  - src/models.py — Pydantic data models (APISpec, APIEndpoint, GeneratedDoc, etc.)
+  - src/prompts.py — All LLM prompt templates (no prompt text in other modules)
+  - src/formatter.py — Output formatting (Markdown, HTML)
+  - src/utils.py — Token counting, cost estimation, helpers
+  - specs/ — Sample OpenAPI spec files for testing
+  - output/ — Generated documentation output directory
+  - tests/ — pytest test suite with fixtures
+
+  ## Key Models (src/models.py)
+  - HTTPMethod (Enum): GET, POST, PUT, PATCH, DELETE
+  - Parameter: name, location, required, schema_type, description
+  - RequestBody: content_type, schema_summary, required
+  - ResponseInfo: status_code, description, schema_summary
+  - APIEndpoint: method, path, operation_id, summary, description, tags, parameters, request_body, responses
+  - APISpec: title, version, description, base_url, endpoints
+  - GeneratedDoc: endpoint_ref, markdown, tokens_used, model
+  - GenerationResult: api_title, api_version, docs, total_tokens, total_cost_usd, model
+
+  ## Conventions
+  - All prompt templates live exclusively in src/prompts.py — no prompt strings in other modules
+  - Pydantic v2 models used for all structured data; use model_dump() not dict()
+  - Anthropic client initialized once at module level in generator.py
+  - Streaming via client.messages.stream() when --stream flag is passed
+  - Token counts extracted from API response for cost tracking
+  - Cost estimation uses per-model pricing table in utils.py
+  - CLI uses argparse with positional `spec` arg and optional -o, -f, -m, --stream, --verbose flags
+  - Default model: claude-sonnet-4-20250514; also supports claude-haiku-4-5-20251001
+  - Environment variables loaded from .env via python-dotenv; ANTHROPIC_API_KEY is required
+
+  ## Error Handling Strategy
+  - Missing API key: print clear error and exit(1)
+  - Spec file not found or invalid JSON/YAML: print details and exit
+  - Rate limit (429): retry up to 3x with exponential backoff (2s, 4s, 8s)
+  - Auth error (401): print message to check API key and exit
+  - Server error (500+): retry once, then skip endpoint with warning
+  - Unparseable model response: log warning, include raw response with a note
+
+  ## Domain
+  API documentation generation; primary sample domain is a loyalty/rewards platform API (members, points, transactions, rewards catalog).
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
