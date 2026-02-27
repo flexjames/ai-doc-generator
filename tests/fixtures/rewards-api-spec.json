@@ -1,0 +1,284 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Rewards API",
+    "version": "1.0.0",
+    "description": "A loyalty rewards platform API"
+  },
+  "servers": [
+    { "url": "https://api.rewards.example.com" }
+  ],
+  "components": {
+    "schemas": {
+      "Member": {
+        "type": "object",
+        "properties": {
+          "memberId": { "type": "string" },
+          "firstName": { "type": "string" },
+          "lastName": { "type": "string" },
+          "email": { "type": "string" },
+          "pointsBalance": { "type": "integer" },
+          "tier": { "type": "string" }
+        },
+        "required": ["memberId", "firstName", "lastName", "email"]
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "transactionId": { "type": "string" },
+          "memberId": { "type": "string" },
+          "transactionType": { "type": "string" },
+          "points": { "type": "integer" },
+          "createdAt": { "type": "string" }
+        }
+      },
+      "Reward": {
+        "type": "object",
+        "properties": {
+          "rewardId": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "pointsCost": { "type": "integer" },
+          "available": { "type": "boolean" }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/members/{memberId}": {
+      "parameters": [
+        {
+          "name": "memberId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" },
+          "description": "Unique member identifier"
+        }
+      ],
+      "get": {
+        "operationId": "getMember",
+        "summary": "Get member profile",
+        "description": "Retrieve a member's profile and points balance",
+        "tags": ["members"],
+        "responses": {
+          "200": {
+            "description": "Member profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Member" }
+              }
+            }
+          },
+          "404": {
+            "description": "Member not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/members": {
+      "post": {
+        "operationId": "enrollMember",
+        "summary": "Enroll a new member",
+        "description": "Enroll a new member in the rewards program",
+        "tags": ["members"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": { "type": "string" },
+                  "lastName": { "type": "string" },
+                  "email": { "type": "string" }
+                },
+                "required": ["firstName", "lastName", "email"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Member enrolled",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Member" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/members/{memberId}/transactions": {
+      "parameters": [
+        {
+          "name": "memberId",
+          "in": "path",
+          "required": true,
+          "schema": { "type": "string" },
+          "description": "Unique member identifier"
+        }
+      ],
+      "get": {
+        "operationId": "getMemberTransactions",
+        "summary": "List member transactions",
+        "description": "List a member's point transactions with pagination",
+        "tags": ["transactions"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer" },
+            "description": "Page number"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer" },
+            "description": "Number of results per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Transaction list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Transaction" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transactions/earn": {
+      "post": {
+        "operationId": "earnPoints",
+        "summary": "Award points",
+        "description": "Award points to a member for a qualifying action",
+        "tags": ["transactions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "memberId": { "type": "string" },
+                  "points": { "type": "integer" },
+                  "reason": { "type": "string" }
+                },
+                "required": ["memberId", "points"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Points awarded",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Transaction" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/transactions/redeem": {
+      "post": {
+        "operationId": "redeemPoints",
+        "summary": "Redeem points",
+        "description": "Redeem points for a reward",
+        "tags": ["transactions"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "memberId": { "type": "string" },
+                  "rewardId": { "type": "string" },
+                  "pointsCost": { "type": "integer" }
+                },
+                "required": ["memberId", "rewardId", "pointsCost"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Points redeemed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Transaction" }
+              }
+            }
+          },
+          "400": {
+            "description": "Insufficient points or invalid reward",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rewards": {
+      "get": {
+        "operationId": "listRewards",
+        "summary": "List available rewards",
+        "description": "List available rewards in the catalog",
+        "tags": ["rewards"],
+        "responses": {
+          "200": {
+            "description": "Rewards catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Reward" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
