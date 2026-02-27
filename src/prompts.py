@@ -38,9 +38,18 @@ def build_endpoint_prompt(endpoint: APIEndpoint) -> str:
         lines.append("\n**Parameters:**")
         for param in endpoint.parameters:
             required_label = "required" if param.required else "optional"
+            schema_type = param.schema_type
+            if param.format:
+                schema_type = f"{schema_type} ({param.format})"
             desc = f" — {param.description}" if param.description else ""
+            extras = []
+            if param.enum:
+                extras.append(f"allowed values: {', '.join(param.enum)}")
+            if param.example:
+                extras.append(f"example: {param.example}")
+            extras_str = f" [{'; '.join(extras)}]" if extras else ""
             lines.append(
-                f"- `{param.name}` ({param.location}, {param.schema_type}, {required_label}){desc}"
+                f"- `{param.name}` ({param.location}, {schema_type}, {required_label}){desc}{extras_str}"
             )
 
     if endpoint.request_body:
