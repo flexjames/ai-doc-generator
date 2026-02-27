@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from src import formatter, generator, parser, utils
+from src import formatter, generator, parser, prompts, utils
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
 DEFAULT_OUTPUT = "output/docs.md"
@@ -46,6 +46,16 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enable verbose logging",
     )
+    p.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        help="Skip cost confirmation prompt",
+    )
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Parse the spec and show cost estimate without making any API calls",
+    )
     return p
 
 
@@ -57,14 +67,15 @@ def main() -> None:
         format="%(levelname)s %(name)s: %(message)s",
     )
 
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        print(
-            "Error: ANTHROPIC_API_KEY is not set. "
-            "Add it to your .env file or export it as an environment variable.",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+    if not args.dry_run:
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            print(
+                "Error: ANTHROPIC_API_KEY is not set. "
+                "Add it to your .env file or export it as an environment variable.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
 
     try:
         spec = parser.parse_spec(args.spec)
@@ -76,6 +87,37 @@ def main() -> None:
         sys.exit(1)
 
     print(f"{spec.title} v{spec.version} — {len(spec.endpoints)} endpoints found")
+
+    estimated_input = sum(
+        utils.estimate_tokens(prompts.build_endpoint_prompt(ep)) for ep in spec.endpoints
+    ) + utils.estimate_tokens(prompts.build_overview_prompt(spec))
+    estimated_output = 800 * len(spec.endpoints) + 500
+    estimated_cost = utils.estimate_cost(estimated_input, estimated_output, args.model)
+
+    if args.dry_run:
+        print("\nEndpoints:")
+        for ep in spec.endpoints:
+            summary = f" — {ep.summary}" if ep.summary else ""
+            print(f"  {ep.method.value} {ep.path}{summary}")
+        print(
+            f"\nEstimated cost: ~{utils.format_cost(estimated_cost)} "
+            f"(~{estimated_input + estimated_output:,} tokens)"
+        )
+        print(f"Model: {args.model}")
+        print(f"Output: {args.output} ({args.format})")
+        print("\nDry run complete. No API calls were made.")
+        sys.exit(0)
+
+    print(
+        f"Estimated cost: ~{utils.format_cost(estimated_cost)} "
+        f"(~{estimated_input + estimated_output:,} tokens)"
+    )
+
+    if not args.yes:
+        answer = input("Proceed? [y/N]: ").strip().lower()
+        if answer != "y":
+            print("Aborted.")
+            sys.exit(0)
 
     start = time.time()
 

@@ -97,12 +97,17 @@ def _extract_parameters(params: list[dict[str, Any]]) -> list[Parameter]:
     result = []
     for p in params or []:
         schema: dict[str, Any] = p.get("schema") or {}
+        enum_values = schema.get("enum")
+        example = p.get("example") or schema.get("example")
         result.append(Parameter(
             name=p.get("name", ""),
             location=p.get("in", ""),
             required=p.get("required", False),
             schema_type=schema.get("type", "string"),
             description=p.get("description"),
+            example=str(example) if example is not None else None,
+            enum=[str(v) for v in enum_values] if enum_values else None,
+            format=schema.get("format"),
         ))
     return result
 

@@ -18,6 +18,9 @@ class Parameter(BaseModel):
     required: bool = False
     schema_type: str = "string"
     description: Optional[str] = None
+    example: Optional[str] = None
+    enum: Optional[list[str]] = None
+    format: Optional[str] = None
 
 
 class RequestBody(BaseModel):
