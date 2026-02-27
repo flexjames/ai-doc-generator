@@ -26,6 +26,9 @@ build/
 # Output
 output/
 
+# Claude Code
+.claude/settings.local.json
+
 # OS
 .DS_Store
 Thumbs.db
