@@ -30,23 +30,30 @@ def _load_file(file_path: str) -> dict[str, Any]:
 
 
 def _resolve_refs(spec: dict[str, Any]) -> dict[str, Any]:
-    schemas: dict[str, Any] = (spec.get("components") or {}).get("schemas") or {}
+    def _lookup(ref: str) -> Any:
+        parts = ref.lstrip("#/").split("/")
+        node: Any = spec
+        for part in parts:
+            if not isinstance(node, dict) or part not in node:
+                return None
+            node = node[part]
+        return node
 
     def _resolve(node: Any, visiting: frozenset[str]) -> Any:
         if isinstance(node, dict):
             if "$ref" in node and len(node) == 1:
                 ref = node["$ref"]
-                if not ref.startswith("#/components/schemas/"):
+                if not ref.startswith("#/"):
                     logger.warning("Skipping non-local $ref: %s", ref)
                     return node
-                name = ref.split("/")[-1]
-                if name in visiting:
-                    logger.warning("Circular $ref detected for '%s'; breaking cycle", name)
+                if ref in visiting:
+                    logger.warning("Circular $ref detected for '%s'; breaking cycle", ref)
                     return node
-                if name not in schemas:
+                target = _lookup(ref)
+                if target is None:
                     logger.warning("Unresolvable $ref '%s'; leaving as-is", ref)
                     return node
-                return _resolve(schemas[name], visiting | {name})
+                return _resolve(target, visiting | {ref})
             return {k: _resolve(v, visiting) for k, v in node.items()}
         if isinstance(node, list):
             return [_resolve(item, visiting) for item in node]
