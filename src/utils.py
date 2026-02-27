@@ -27,3 +27,8 @@ def sanitize_anchor(text: str) -> str:
 
 def create_progress_bar(current: int, total: int) -> str:
     return f"[{current}/{total}] Generating..."
+
+
+def estimate_tokens(text: str) -> int:
+    """Rough token estimate based on character count (~4 chars per token)."""
+    return max(1, len(text) // 4)

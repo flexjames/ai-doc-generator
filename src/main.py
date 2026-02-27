@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from src import formatter, generator, parser, utils
+from src import formatter, generator, parser, prompts, utils
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
 DEFAULT_OUTPUT = "output/docs.md"
@@ -46,6 +46,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Enable verbose logging",
     )
+    p.add_argument(
+        "-y", "--yes",
+        action="store_true",
+        help="Skip cost confirmation prompt",
+    )
     return p
 
 
@@ -76,6 +81,22 @@ def main() -> None:
         sys.exit(1)
 
     print(f"{spec.title} v{spec.version} — {len(spec.endpoints)} endpoints found")
+
+    estimated_input = sum(
+        utils.estimate_tokens(prompts.build_endpoint_prompt(ep)) for ep in spec.endpoints
+    ) + utils.estimate_tokens(prompts.build_overview_prompt(spec))
+    estimated_output = 800 * len(spec.endpoints) + 500
+    estimated_cost = utils.estimate_cost(estimated_input, estimated_output, args.model)
+    print(
+        f"Estimated cost: ~{utils.format_cost(estimated_cost)} "
+        f"(~{estimated_input + estimated_output:,} tokens)"
+    )
+
+    if not args.yes:
+        answer = input("Proceed? [y/N]: ").strip().lower()
+        if answer != "y":
+            print("Aborted.")
+            sys.exit(0)
 
     start = time.time()
 

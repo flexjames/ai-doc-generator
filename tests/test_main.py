@@ -139,11 +139,12 @@ class TestMainSuccess:
                                     with patch("src.formatter.format_html", return_value="html output") as mock_html:
                                         with patch("os.makedirs") as mock_makedirs:
                                             with patch("builtins.open", mock_open()) as mock_file:
-                                                main()
-                                                return (
-                                                    mock_parse, mock_overview, mock_full,
-                                                    mock_md, mock_html, mock_makedirs, mock_file
-                                                )
+                                                with patch("builtins.input", return_value="y"):
+                                                    main()
+                                                    return (
+                                                        mock_parse, mock_overview, mock_full,
+                                                        mock_md, mock_html, mock_makedirs, mock_file
+                                                    )
 
     def test_markdown_pipeline(self, minimal_spec, minimal_result):
         argv = ["main", "specs/sample.json"]
