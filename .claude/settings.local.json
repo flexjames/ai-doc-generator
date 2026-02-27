@@ -3,7 +3,10 @@
     "allow": [
       "Bash(python:*)",
       "Bash(git remote:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git config:*)",
+      "Bash(openspec list:*)",
+      "Bash(openspec status:*)"
     ]
   }
 }
