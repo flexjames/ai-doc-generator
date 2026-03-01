@@ -32,6 +32,7 @@ th { background: #f5f5f5; }
 
 
 def format_markdown(result: GenerationResult, overview: str) -> str:
+    """Assemble a complete Markdown document from a GenerationResult and overview text."""
     lines: list[str] = []
 
     lines.append(f"# {result.api_title} — API Documentation")
@@ -70,6 +71,7 @@ def format_markdown(result: GenerationResult, overview: str) -> str:
 
 
 def format_html(result: GenerationResult, overview: str) -> str:
+    """Render the documentation as a self-contained HTML page with embedded CSS."""
     markdown_text = format_markdown(result, overview)
     body_html = md_pkg.markdown(markdown_text, extensions=["fenced_code", "tables"])
     return f"""<!DOCTYPE html>
