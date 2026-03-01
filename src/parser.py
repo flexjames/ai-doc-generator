@@ -13,6 +13,7 @@ _SUPPORTED_METHODS = {m.value.lower() for m in HTTPMethod}
 
 
 def _load_file(file_path: str) -> dict[str, Any]:
+    """Load a JSON or YAML spec file and return its parsed contents as a dict."""
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"Spec file not found: {file_path}")
@@ -30,7 +31,9 @@ def _load_file(file_path: str) -> dict[str, Any]:
 
 
 def _resolve_refs(spec: dict[str, Any]) -> dict[str, Any]:
+    """Recursively resolve all local $ref pointers in a spec dict in-place."""
     def _lookup(ref: str) -> Any:
+        """Traverse the spec dict following a JSON Pointer path from a $ref string."""
         parts = ref.lstrip("#/").split("/")
         node: Any = spec
         for part in parts:
@@ -40,6 +43,7 @@ def _resolve_refs(spec: dict[str, Any]) -> dict[str, Any]:
         return node
 
     def _resolve(node: Any, visiting: frozenset[str]) -> Any:
+        """Recursively walk a node, replacing $ref objects with their resolved targets."""
         if isinstance(node, dict):
             if "$ref" in node and len(node) == 1:
                 ref = node["$ref"]
@@ -63,6 +67,7 @@ def _resolve_refs(spec: dict[str, Any]) -> dict[str, Any]:
 
 
 def _summarize_schema(schema: dict[str, Any] | None, depth: int = 0) -> str:
+    """Return a compact human-readable string summarising a JSON Schema object."""
     if not schema:
         return ""
     if not isinstance(schema, dict):
@@ -94,6 +99,7 @@ def _summarize_schema(schema: dict[str, Any] | None, depth: int = 0) -> str:
 
 
 def _extract_parameters(params: list[dict[str, Any]]) -> list[Parameter]:
+    """Convert a list of raw OpenAPI parameter objects into Parameter models."""
     result = []
     for p in params or []:
         schema: dict[str, Any] = p.get("schema") or {}
@@ -113,6 +119,7 @@ def _extract_parameters(params: list[dict[str, Any]]) -> list[Parameter]:
 
 
 def _extract_request_body(body: dict[str, Any] | None) -> RequestBody | None:
+    """Parse a raw OpenAPI requestBody object into a RequestBody model, or None if absent."""
     if not body:
         return None
     content: dict[str, Any] = body.get("content") or {}
@@ -128,6 +135,7 @@ def _extract_request_body(body: dict[str, Any] | None) -> RequestBody | None:
 
 
 def _extract_responses(responses: dict[str, Any]) -> list[ResponseInfo]:
+    """Convert a raw OpenAPI responses map into a list of ResponseInfo models."""
     result = []
     for status_code, response in (responses or {}).items():
         description = (response or {}).get("description", "")
@@ -147,6 +155,7 @@ def _extract_responses(responses: dict[str, Any]) -> list[ResponseInfo]:
 
 
 def _extract_endpoints(spec: dict[str, Any]) -> list[APIEndpoint]:
+    """Walk all paths in the spec and return a flat list of APIEndpoint models."""
     paths = cast(dict[str, Any], spec.get("paths") or {})
     if not paths:
         logger.warning("Spec has no paths defined; returning empty endpoint list")
@@ -176,6 +185,7 @@ def _extract_endpoints(spec: dict[str, Any]) -> list[APIEndpoint]:
 
 
 def _merge_parameters(path_params: list[dict[str, Any]], op_params: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Merge path-level and operation-level parameters, with operation params taking precedence."""
     merged = {(p["name"], p["in"]): p for p in path_params if "name" in p and "in" in p}
     for p in op_params:
         if "name" in p and "in" in p:
@@ -184,6 +194,7 @@ def _merge_parameters(path_params: list[dict[str, Any]], op_params: list[dict[st
 
 
 def parse_spec(file_path: str) -> APISpec:
+    """Load, resolve, and parse an OpenAPI spec file into an APISpec model."""
     raw = _load_file(file_path)
     resolved = _resolve_refs(raw)
     info: dict[str, Any] = resolved.get("info") or {}

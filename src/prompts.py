@@ -16,6 +16,7 @@ Guidelines:
 
 
 def build_endpoint_prompt(endpoint: APIEndpoint) -> str:
+    """Build the user-turn prompt asking the LLM to document a single API endpoint."""
     lines: list[str] = []
 
     lines.append(f"Document the following API endpoint:\n")
@@ -73,6 +74,7 @@ def build_endpoint_prompt(endpoint: APIEndpoint) -> str:
 
 
 def build_overview_prompt(spec: APISpec) -> str:
+    """Build the user-turn prompt asking the LLM to write an API overview/introduction section."""
     lines: list[str] = []
 
     lines.append(f"Write an overview and introduction section for the following API:\n")

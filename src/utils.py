@@ -8,6 +8,7 @@ PRICING = {
 
 
 def estimate_cost(input_tokens: int, output_tokens: int, model: str) -> float:
+    """Calculate the estimated USD cost for a given token usage and model."""
     if model not in PRICING:
         raise ValueError(f"Unknown model: {model!r}")
     rates = PRICING[model]
@@ -15,10 +16,12 @@ def estimate_cost(input_tokens: int, output_tokens: int, model: str) -> float:
 
 
 def format_cost(cost: float) -> str:
+    """Format a cost value as a dollar string with four decimal places."""
     return f"${cost:.4f}"
 
 
 def sanitize_anchor(text: str) -> str:
+    """Convert a string into a URL-safe lowercase anchor slug."""
     text = text.lower()
     text = text.replace(" ", "-")
     text = re.sub(r"[^a-z0-9-]", "", text)
@@ -26,6 +29,7 @@ def sanitize_anchor(text: str) -> str:
 
 
 def create_progress_bar(current: int, total: int) -> str:
+    """Return a simple progress label showing the current step out of total."""
     return f"[{current}/{total}] Generating..."
 
 

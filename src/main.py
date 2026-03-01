@@ -15,6 +15,7 @@ DEFAULT_OUTPUT = "output/docs.md"
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build and return the CLI argument parser."""
     p = argparse.ArgumentParser(
         prog="main.py",
         description="Generate API documentation from OpenAPI specs using AI.",
@@ -60,6 +61,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    """Entry point: parse args, validate inputs, run generation, and write output."""
     args = build_parser().parse_args()
 
     logging.basicConfig(
